@@ -139,7 +139,7 @@ def labels_to_class_weights(labels, nc=80):
         return torch.Tensor()
 
     labels = np.concatenate(labels, 0)  # labels.shape = (866643, 5) for COCO
-    classes = labels[:, 0].astype(np.int)  # labels = [class xywh]
+    classes = labels[:, 0].astype(np.int_)  # labels = [class xywh]
     weights = np.bincount(classes, minlength=nc)  # occurences per class
 
     # Prepend gridpoint count (for uCE trianing)
@@ -155,7 +155,7 @@ def labels_to_class_weights(labels, nc=80):
 def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
     # Produces image weights based on class mAPs
     n = len(labels)
-    class_counts = np.array([np.bincount(labels[i][:, 0].astype(np.int), minlength=nc) for i in range(n)])
+    class_counts = np.array([np.bincount(labels[i][:, 0].astype(np.int_), minlength=nc) for i in range(n)])
     image_weights = (class_weights.reshape(1, nc) * class_counts).sum(1)
     # index = random.choices(range(n), weights=image_weights, k=1)  # weight image sample
     return image_weights
@@ -764,10 +764,10 @@ def non_max_suppression2(prediction, conf_thres=0.1, iou_thres=0.6, max_box=1500
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
 
     t = time.time()
-    output = [None] * prediction.shape[0]   
+    output = [None] * prediction.shape[0]
     pred1 = (prediction < -1).float()[:,:max_box,:6]    # pred1.size()=[batch, max_box, max_box] denotes boxes without offset by class
     pred2 = pred1[:,:,:4]+0   # pred2 denotes boxes with offset by class
-    batch_size = prediction.shape[0]   
+    batch_size = prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -823,7 +823,7 @@ def non_max_suppression2(prediction, conf_thres=0.1, iou_thres=0.6, max_box=1500
         B=iou.mul(E)
         if A.equal(B)==True:
             break
-    keep = (maxA <= iou_thres) 
+    keep = (maxA <= iou_thres)
     weights = (B*(B>0.8) + torch.eye(max_box).cuda().expand(batch_size,max_box,max_box)) * (pred1[:,:,4].reshape((batch_size,1,max_box)))
     pred1[:,:, :4]=torch.matmul(weights,pred1[:,:,:4]) / weights.sum(2, keepdim=True)   # weighted coordinates
 
